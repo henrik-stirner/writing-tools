@@ -19,7 +19,6 @@ using System.Windows.Shapes;
 
 // see https://github.com/rvknth043/Global-Low-Level-Key-Board-And-Mouse-Hook
 using writing_tools.GlobalLowLevelHook;
-using static writing_tools.GlobalLowLevelHook.MouseHook;
 
 namespace writing_tools
 {
@@ -35,48 +34,21 @@ namespace writing_tools
         // layout
         struct Key
         {
-            string id;
-            int x, y, w, h;
-            Rectangle rectangle;
+            public string Id { get; set; }
+            public int X {get; set;}
+            public int Y { get; set; }
+            public int W { get; set; }
+            public int H { get; set; }
+            public Rectangle Rectangle { get; set; }
 
             public Key(string new_id, int new_x, int new_y, int new_w, int new_h, Rectangle new_rectangle)
             {
-                this.id = new_id;
-                this.x = new_x;
-                this.y = new_y;
-                this.w = new_w;
-                this.h = new_h;
-                this.rectangle = new_rectangle;
-            }
-            public string ID
-            {
-                get { return this.id; }
-                set { this.id = value; }
-            }
-            public int X
-            {
-                get { return this.x; }
-                set { this.x = value; }
-            }
-            public int Y
-            {
-                get { return this.y; }
-                set { this.y = value; }
-            }
-            public int W
-            {
-                get { return this.w; }
-                set { this.w = value; }
-            }
-            public int H
-            {
-                get { return this.h; }
-                set { this.h = value; }
-            }
-            public Rectangle RECTANGLE
-            {
-                get { return this.rectangle; }
-                set { this.rectangle = value; }
+                Id = new_id;
+                X = new_x;
+                Y = new_y;
+                W = new_w;
+                H = new_h;
+                Rectangle = new_rectangle;
             }
         }
 
@@ -143,7 +115,7 @@ namespace writing_tools
             // new Key("RETURN",    790 + 50,    190,    75, 50,    new Rectangle()),
 
             new Key("LSHIFT",       10,          250,    75, 50,    new Rectangle()),
-            new Key("OEM_102",           70  + 25,    250,    50, 50,    new Rectangle()),
+            new Key("OEM_102",      70  + 25,    250,    50, 50,    new Rectangle()),
             new Key("KEY_Y",        130 + 25,    250,    50, 50,    new Rectangle()),
             new Key("KEY_X",        190 + 25,    250,    50, 50,    new Rectangle()),
             new Key("KEY_C",        250 + 25,    250,    50, 50,    new Rectangle()),
@@ -171,7 +143,7 @@ namespace writing_tools
             new Key("RMB",          1120,   100,    75, 100,         new Rectangle())
         };
 
-        // palette
+        // brushes - palette
         SolidColorBrush backgroundBrush = new SolidColorBrush(Color.FromRgb(25, 25, 25));
         SolidColorBrush accentBrush = new SolidColorBrush(Color.FromRgb(200, 200, 200));
         // SolidColorBrush accentBrush = (SolidColorBrush)SystemParameters.WindowGlassBrush;
@@ -187,28 +159,32 @@ namespace writing_tools
             // apply brushs
             Background = backgroundBrush;
             activeKeysLabel.Foreground = accentBrush;
-            curserPositionLabel.Foreground = accentBrush;
+            cursorPositionLabel.Foreground = accentBrush;
+
+            practiceButton.Background = backgroundBrush;
+            practiceButton.Foreground = accentBrush;
+            practiceButton.BorderBrush = accentBrush;
 
             // generate layout
             List<Key> layout = keyboardLayout.Concat(mouseLayout).ToList();
-            
+
             foreach (Key key in layout)
-            {   
-                key.RECTANGLE.Name = key.ID + "_Button";
+            {
+                key.Rectangle.Name = key.Id + "_Button";
 
-                key.RECTANGLE.Width = key.W;
-                key.RECTANGLE.Height = key.H;
+                key.Rectangle.Width = key.W;
+                key.Rectangle.Height = key.H;
 
-                key.RECTANGLE.RadiusX = 5;
-                key.RECTANGLE.RadiusY = 5;
+                key.Rectangle.RadiusX = 5;
+                key.Rectangle.RadiusY = 5;
 
-                key.RECTANGLE.Fill = backgroundBrush;
-                key.RECTANGLE.Stroke = accentBrush;
+                key.Rectangle.Fill = backgroundBrush;
+                key.Rectangle.Stroke = accentBrush;
 
-                keyboardCanvas.Children.Add(key.RECTANGLE);
+                keysButtonsCanvas.Children.Add(key.Rectangle);
 
-                Canvas.SetLeft(key.RECTANGLE, key.X);
-                Canvas.SetTop(key.RECTANGLE, key.Y);
+                Canvas.SetTop(key.Rectangle, key.Y);
+                Canvas.SetLeft(key.Rectangle, key.X);
             }
 
             // low level keyboard hook
@@ -229,102 +205,7 @@ namespace writing_tools
             mouseHook.Install();
 
             // for uninstalling the hooks
-            Application.Current.Exit += new ExitEventHandler(this.OnApplicationExit);
-        }
-
-        void KeyboardHook_KeyDown(KeyboardHook.VKeys key)
-        {
-            var already_down = activeKeys.FirstOrDefault(stringToCheck => stringToCheck.Contains(key.ToString().Replace("_", "").Replace("KEY", "")));
-            if (already_down != null)
-            {
-                return;
-            }
-
-            activeKeys.Add(key.ToString().Replace("_", "").Replace("KEY", ""));
-            activeKeysLabel.Content = string.Join(" + ", activeKeys);
-            
-            var rectangle = keyboardLayout.FirstOrDefault(keyToCheck => keyToCheck.ID.Contains(key.ToString())).RECTANGLE;
-            if (rectangle != null) {
-                rectangle.Fill = accentBrush;
-            }
-        }
-
-        // event handlers
-        void KeyboardHook_KeyUp(KeyboardHook.VKeys key)
-        {
-            var already_up = activeKeys.FirstOrDefault(stringToCheck => stringToCheck.Contains(key.ToString().Replace("_", "").Replace("KEY", "")));
-            if (already_up == null)
-            {
-                return;
-            }
-
-            activeKeys.Remove(key.ToString().Replace("_", "").Replace("KEY", ""));
-            activeKeysLabel.Content = string.Join(" + ", activeKeys);
-
-            var rectangle = keyboardLayout.FirstOrDefault(keyToCheck => keyToCheck.ID.Contains(key.ToString())).RECTANGLE;
-            if (rectangle != null)
-            {
-                rectangle.Fill = backgroundBrush;
-            }
-        }
-
-        void MouseHook_MouseMove(MouseHook.MSLLHOOKSTRUCT mouseStruct)
-        {
-            curserPositionLabel.Content = "x: " + mouseStruct.pt.x.ToString() + ", y: " + mouseStruct.pt.y.ToString();
-        }
-
-        void MouseHook_LeftButtonDown(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
-        {
-            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.ID.Contains("LMB")).RECTANGLE;
-            if (rectangle != null)
-            {
-                rectangle.Fill = accentBrush;
-            }
-        }
-        
-        void MouseHook_LeftButtonUp(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
-        {
-            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.ID.Contains("LMB")).RECTANGLE;
-            if (rectangle != null)
-            {
-                rectangle.Fill = backgroundBrush;
-            }
-        }
-        
-        void MouseHook_RightButtonDown(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
-        {
-            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.ID.Contains("RMB")).RECTANGLE;
-            if (rectangle != null)
-            {
-                rectangle.Fill = accentBrush;
-            }
-        }
-        
-        void MouseHook_RightButtonUp(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
-        {
-            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.ID.Contains("RMB")).RECTANGLE;
-            if (rectangle != null)
-            {
-                rectangle.Fill = backgroundBrush;
-            }
-        }
-        
-        void MouseHook_MiddleButtonDown(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
-        {
-            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.ID.Contains("MMB")).RECTANGLE;
-            if (rectangle != null)
-            {
-                rectangle.Fill = accentBrush;
-            }
-        }
-        
-        void MouseHook_MiddleButtonUp(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
-        {
-            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.ID.Contains("MMB")).RECTANGLE;
-            if (rectangle != null)
-            {
-                rectangle.Fill = backgroundBrush;
-            }
+            Application.Current.Exit += new ExitEventHandler(OnApplicationExit);
         }
 
         private void OnApplicationExit(object sender, EventArgs e)
@@ -342,6 +223,107 @@ namespace writing_tools
             mouseHook.MiddleButtonUp -= new MouseHook.MouseHookCallback(MouseHook_MiddleButtonUp);
 
             mouseHook.Uninstall();
+        }
+
+        void KeyboardHook_KeyDown(KeyboardHook.VKeys key)
+        {
+            var already_down = activeKeys.FirstOrDefault(stringToCheck => stringToCheck.Contains(key.ToString().Replace("_", "").Replace("KEY", "")));
+            if (already_down != null)
+            {
+                return;
+            }
+
+            activeKeys.Add(key.ToString().Replace("_", "").Replace("KEY", ""));
+            activeKeysLabel.Content = string.Join(" + ", activeKeys);
+            
+            var rectangle = keyboardLayout.FirstOrDefault(keyToCheck => keyToCheck.Id.Contains(key.ToString())).Rectangle;
+            if (rectangle != null) {
+                rectangle.Fill = accentBrush;
+            }
+        }
+
+        // event handlers
+        void KeyboardHook_KeyUp(KeyboardHook.VKeys key)
+        {
+            var already_up = activeKeys.FirstOrDefault(stringToCheck => stringToCheck.Contains(key.ToString().Replace("_", "").Replace("KEY", "")));
+            if (already_up == null)
+            {
+                return;
+            }
+
+            activeKeys.Remove(key.ToString().Replace("_", "").Replace("KEY", ""));
+            activeKeysLabel.Content = string.Join(" + ", activeKeys);
+
+            var rectangle = keyboardLayout.FirstOrDefault(keyToCheck => keyToCheck.Id.Contains(key.ToString())).Rectangle;
+            if (rectangle != null)
+            {
+                rectangle.Fill = backgroundBrush;
+            }
+        }
+
+        void MouseHook_MouseMove(MouseHook.MSLLHOOKSTRUCT mouseStruct)
+        {
+            cursorPositionLabel.Content = "x: " + mouseStruct.pt.x.ToString() + ", y: " + mouseStruct.pt.y.ToString();
+        }
+
+        void MouseHook_LeftButtonDown(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
+        {
+            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.Id.Contains("LMB")).Rectangle;
+            if (rectangle != null)
+            {
+                rectangle.Fill = accentBrush;
+            }
+        }
+        
+        void MouseHook_LeftButtonUp(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
+        {
+            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.Id.Contains("LMB")).Rectangle;
+            if (rectangle != null)
+            {
+                rectangle.Fill = backgroundBrush;
+            }
+        }
+        
+        void MouseHook_RightButtonDown(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
+        {
+            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.Id.Contains("RMB")).Rectangle;
+            if (rectangle != null)
+            {
+                rectangle.Fill = accentBrush;
+            }
+        }
+        
+        void MouseHook_RightButtonUp(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
+        {
+            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.Id.Contains("RMB")).Rectangle;
+            if (rectangle != null)
+            {
+                rectangle.Fill = backgroundBrush;
+            }
+        }
+        
+        void MouseHook_MiddleButtonDown(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
+        {
+            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.Id.Contains("MMB")).Rectangle;
+            if (rectangle != null)
+            {
+                rectangle.Fill = accentBrush;
+            }
+        }
+        
+        void MouseHook_MiddleButtonUp(MouseHook.MSLLHOOKSTRUCT mouseStruct) 
+        {
+            var rectangle = mouseLayout.FirstOrDefault(keyToCheck => keyToCheck.Id.Contains("MMB")).Rectangle;
+            if (rectangle != null)
+            {
+                rectangle.Fill = backgroundBrush;
+            }
+        }
+
+        private void practiceButton_Click(object sender, RoutedEventArgs e)
+        {
+            PracticeWindow practiceWindow = new PracticeWindow();
+            practiceWindow.Show();
         }
     }
 }
